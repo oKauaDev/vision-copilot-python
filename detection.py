@@ -129,7 +129,7 @@ def initialize():
                     
                     # Mostrar informações
                     info = f"{class_name}: {conf:.2f}"
-                    direction_text = f"Direcao: {" ".join(direction)}"
+                    direction_text = f"Direcao: {' '.join(direction)}"
                     cv2.putText(annotated_frame, info, (x1, y1 - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
                     cv2.putText(annotated_frame, direction_text, (x1, y1 - 30), 
