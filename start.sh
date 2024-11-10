@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ativa o ambiente virtual
-source venv/bin/activate
+source .\\env\\Scripts\\activate
 
 # Executa o script Python
 python ./main.py
