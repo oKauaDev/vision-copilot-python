@@ -29,7 +29,7 @@ python3 -m venv env
 Para instalar as dependências do projeto, execute o comando:
 
 ```bash
-pip install ultralytics opencv-python pyttsx3 logging spacy
+pip install ultralytics opencv-python pyttsx3 loguru spacy
 ```
 
 > **Nota:** Certifique-se de que o `pip` está instalado.
