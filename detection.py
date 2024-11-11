@@ -2,7 +2,7 @@ from ultralytics import YOLO
 import cv2
 from brain import generateSpeak
 import pyttsx3
-from loguru import logger
+# from loguru import logger
 from datetime import datetime, timedelta
 from threading import Thread
 from queue import Queue
@@ -47,9 +47,9 @@ class SpeechEngine:
         self.speech_thread.join()
 
 def initialize():
-    logger = logger.bind(name="ultralytics")
-    logger.disable("ultralytics")
-    logger.level("ERROR", no=40)
+    # logger2 = logger.bind(name="ultralytics")
+    # logger2.disable("ultralytics")
+    # logger2.level("ERROR", no=40)
 
     # Dicionário para armazenar o último momento em que cada objeto foi detectado em cada posição
     last_detections = {}
