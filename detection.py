@@ -2,10 +2,12 @@ from ultralytics import YOLO
 import cv2
 from brain import generateSpeak
 import pyttsx3
-# from loguru import logger
 from datetime import datetime, timedelta
 from threading import Thread
 from queue import Queue
+
+# Variável de controle para mostrar ou não a janela
+SHOW_WINDOW = False  # Mude para True se quiser ver a janela
 
 def check_expire_time(obj, chave, min_interval_seconds=10):
     if chave in obj:
@@ -47,11 +49,6 @@ class SpeechEngine:
         self.speech_thread.join()
 
 def initialize():
-    # logger2 = logger.bind(name="ultralytics")
-    # logger2.disable("ultralytics")
-    # logger2.level("ERROR", no=40)
-
-    # Dicionário para armazenar o último momento em que cada objeto foi detectado em cada posição
     last_detections = {}
 
     model = YOLO("yolo11n.pt")
@@ -97,13 +94,14 @@ def initialize():
                 break
 
             results = model(frame)
-            annotated_frame = frame.copy()
             
-            # Desenhar linhas de referência
-            cv2.line(annotated_frame, (WIDTH//3, 0), (WIDTH//3, HEIGHT), (100, 100, 100), 1)
-            cv2.line(annotated_frame, (2*WIDTH//3, 0), (2*WIDTH//3, HEIGHT), (100, 100, 100), 1)
-            cv2.line(annotated_frame, (0, HEIGHT//3), (WIDTH, HEIGHT//3), (100, 100, 100), 1)
-            cv2.line(annotated_frame, (0, 2*HEIGHT//3), (WIDTH, 2*HEIGHT//3), (100, 100, 100), 1)
+            if SHOW_WINDOW:
+                annotated_frame = frame.copy()
+                # Desenhar linhas de referência
+                cv2.line(annotated_frame, (WIDTH//3, 0), (WIDTH//3, HEIGHT), (100, 100, 100), 1)
+                cv2.line(annotated_frame, (2*WIDTH//3, 0), (2*WIDTH//3, HEIGHT), (100, 100, 100), 1)
+                cv2.line(annotated_frame, (0, HEIGHT//3), (WIDTH, HEIGHT//3), (100, 100, 100), 1)
+                cv2.line(annotated_frame, (0, 2*HEIGHT//3), (WIDTH, 2*HEIGHT//3), (100, 100, 100), 1)
             
             phrases = []
 
@@ -121,47 +119,51 @@ def initialize():
                         
                         direction = get_direction(obj_center_x, obj_center_y)
                         
-                        # Criar uma chave única para cada objeto em cada posição
                         detection_key = f"{class_name}_{direction[0]}_{direction[1]}".lower()
 
-                        # Verificar se deve anunciar novamente
                         if not speech_engine.is_speaking and check_expire_time(last_detections, detection_key, 10):
                             speak = generateSpeak(direction, class_name)
                             phrases.append(speak)
-                            # Atualizar o timestamp da última detecção
                             last_detections[detection_key] = datetime.now()
                         
-                        # Desenhar retângulo e informações
-                        cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.circle(annotated_frame, (obj_center_x, obj_center_y), 4, (0, 0, 255), -1)
-                        
-                        # Adicionar texto com informações
-                        info = f"{class_name}: {conf:.2f}"
-                        direction_text = f"Direcao: {' '.join(direction)}"
-                        
-                        # Se estiver em cooldown, adicionar essa informação
-                        if detection_key in last_detections:
-                            time_remaining = 10 - (datetime.now() - last_detections[detection_key]).seconds
-                            if time_remaining > 0:
-                                direction_text += f" (cooldown: {time_remaining}s)"
-                        
-                        cv2.putText(annotated_frame, info, (x1, y1 - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                        cv2.putText(annotated_frame, direction_text, (x1, y1 - 30), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                        if SHOW_WINDOW:
+                            # Desenhar retângulo e informações apenas se SHOW_WINDOW for True
+                            cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                            cv2.circle(annotated_frame, (obj_center_x, obj_center_y), 4, (0, 0, 255), -1)
+                            
+                            info = f"{class_name}: {conf:.2f}"
+                            direction_text = f"Direcao: {' '.join(direction)}"
+                            
+                            if detection_key in last_detections:
+                                time_remaining = 10 - (datetime.now() - last_detections[detection_key]).seconds
+                                if time_remaining > 0:
+                                    direction_text += f" (cooldown: {time_remaining}s)"
+                            
+                            cv2.putText(annotated_frame, info, (x1, y1 - 10),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                            cv2.putText(annotated_frame, direction_text, (x1, y1 - 30), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
             if phrases:
                 speech_engine.say(', '.join(phrases))
 
-            cv2.imshow('Webcam com YOLO', annotated_frame)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            if SHOW_WINDOW:
+                cv2.imshow('Webcam com YOLO', annotated_frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+            else:
+                # Se não estiver mostrando a janela, verificar se deve encerrar de outra forma
+                try:
+                    if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+                except KeyboardInterrupt:
+                    break
 
     finally:
         speech_engine.stop()
         cap.release()
-        cv2.destroyAllWindows()
+        if SHOW_WINDOW:
+            cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     initialize()
