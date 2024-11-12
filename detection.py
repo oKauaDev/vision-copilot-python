@@ -145,6 +145,7 @@ def initialize():
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
             if phrases:
+                print(', '.join(phrases))
                 speech_engine.say(', '.join(phrases))
 
             if SHOW_WINDOW:
